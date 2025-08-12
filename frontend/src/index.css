@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    /* This applies a light gray background and dark text to the whole app */
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+/* Tiptap Editor CSS - we'll adjust this later for light mode */
+.prose {
+  /* This is a reset for Tiptap's default styles */
+}
