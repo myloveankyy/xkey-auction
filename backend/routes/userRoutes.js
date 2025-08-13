@@ -1,14 +1,15 @@
+// backend/routes/userRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const {
-  registerUser,
-  loginUser,
-} = require('../controllers/userController');
+const { registerUser, loginUser } = require('../controllers/userController');
 
-// @route   POST /api/users/register
+// The route for creating a new user (admin signup)
+// POST to /api/users/register
 router.post('/register', registerUser);
 
-// @route   POST /api/users/login
+// The route for logging in a user
+// POST to /api/users/login
 router.post('/login', loginUser);
 
 module.exports = router;

@@ -1,15 +1,25 @@
+// frontend/src/features/auth/authService.js
+
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL + '/users/';
+// --- CHANGE: Simplify the API_URL ---
+// This static path will work for both local development (via proxy)
+// and for the live server (via Nginx).
+const API_URL = '/api/users/';
+
+// Register user
+const register = async (userData) => {
+  // This will now correctly call POST /api/users/register
+  const response = await axios.post(API_URL + 'register', userData);
+  return response.data;
+};
 
 // Login user
 const login = async (userData) => {
-  // Make the POST request to the backend's login endpoint
+  // This will now correctly call POST /api/users/login
   const response = await axios.post(API_URL + 'login', userData);
 
-  // If the request is successful and we get data back
   if (response.data) {
-    // Store the user's data (including the token) in the browser's local storage
     localStorage.setItem('user', JSON.stringify(response.data));
   }
 
@@ -18,11 +28,11 @@ const login = async (userData) => {
 
 // Logout user
 const logout = () => {
-  // Simply remove the user's data from local storage
   localStorage.removeItem('user');
 };
 
 const authService = {
+  register,
   login,
   logout,
 };

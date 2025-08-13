@@ -11,7 +11,11 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AddVehicle from './pages/admin/AddVehicle';
 import VehicleManagement from './pages/admin/VehicleManagement';
-import EditVehicle from './pages/admin/EditVehicle'; // --- ADDED: Import for the new page
+import EditVehicle from './pages/admin/EditVehicle';
+// --- ADDED: Imports for the new admin signup flow ---
+import AdminPinPage from './pages/admin/AdminPinPage';
+import AdminSignupPage from './pages/admin/AdminSignupPage';
+
 
 // Public Pages
 import HomePage from './pages/HomePage';
@@ -35,16 +39,19 @@ function App() {
 
             {/* --- ADMIN ROUTES --- */}
 
-            {/* Login route remains standalone */}
+            {/* Standalone routes that do not use the AdminLayout */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            
+            {/* --- ADDED: The new routes for PIN verification and admin signup --- */}
+            <Route path="/admin/pin" element={<AdminPinPage />} />
+            <Route path="/admin/signup" element={<AdminSignupPage />} />
 
-            {/* All other admin routes are nested inside AdminLayout */}
+            {/* All other protected admin routes are nested inside AdminLayout */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="vehicles" element={<VehicleManagement />} />
               <Route path="add-vehicle" element={<AddVehicle />} />
-              {/* --- ADDED: The route for the new edit vehicle page --- */}
               <Route path="edit-vehicle/:id" element={<EditVehicle />} />
             </Route>
 
