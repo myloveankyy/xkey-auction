@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+  // --- START OF DEBUGGING CODE ---
+  // Let's print the variable directly to see what Node.js is reading.
+  console.log('--- DEBUGGING MONGO_URI ---');
+  console.log('Value of process.env.MONGO_URI:', process.env.MONGO_URI);
+  console.log('--- END OF DEBUGGING CODE ---');
+  // --- You can remove this block after we solve the issue ---
+
   // Add a check to ensure MONGO_URI is loaded correctly
   if (!process.env.MONGO_URI) {
     console.error('FATAL ERROR: MONGO_URI is not defined in the environment variables.');
