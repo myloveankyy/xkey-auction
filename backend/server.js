@@ -1,12 +1,13 @@
 const express = require('express');
-const dotenv =require('dotenv');
+const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const path = require('path');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const fs = require('fs');
 
-dotenv.config();
+// Specify the path to the .env file located in the same directory as this server.js file
+dotenv.config({ path: path.resolve(__dirname, './.env') });
 connectDB();
 
 const app = express();
