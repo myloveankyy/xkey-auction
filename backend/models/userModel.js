@@ -10,11 +10,19 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true, // Each email must be unique
+      unique: true,
     },
     password: {
       type: String,
       required: true,
+    },
+    // --- NEW: User Role ---
+    // This field is crucial for security and differentiating features.
+    // 'enum' ensures that a user's role can only be one of these two values.
+    role: {
+      type: String,
+      enum: ['seller', 'admin'],
+      default: 'seller', // New users will be sellers by default.
     },
   },
   {
@@ -24,14 +32,10 @@ const userSchema = new mongoose.Schema(
 
 // This function runs BEFORE a user is saved to the database
 userSchema.pre('save', async function (next) {
-  // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) {
     next();
   }
-
-  // Generate a "salt" to make the hash more secure
   const salt = await bcrypt.genSalt(10);
-  // Hash the password with the salt
   this.password = await bcrypt.hash(this.password, salt);
 });
 

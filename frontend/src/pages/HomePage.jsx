@@ -1,254 +1,285 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import vehicleService from '../features/vehicles/vehicleService';
+import { useSelector, useDispatch } from 'react-redux';
+import { getVehicles, reset as resetVehicles } from '../features/vehicles/vehicleSlice';
+import { getHeroImages } from '../features/heroImages/heroImageSlice';
 import VehicleCard from '../components/VehicleCard';
-import CategoryCard from '../components/CategoryCard';
+import Header from '../components/Header';
 import { 
-  Loader2, Truck, Car, Bus, KeyRound, Menu, X, 
-  Star, Grid, Phone
+  ShieldCheck, HandCoins, Users, Loader2,
+  Truck, Car, Bus
 } from 'lucide-react';
 
-// --- Header (Unique to HomePage, as requested) ---
-const Header = () => {
-    const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-    const toggleMobileMenu = () => {
-      setMobileMenuOpen(!isMobileMenuOpen);
-    };
-
-    const menuVariants = {
-        hidden: { x: '100%' },
-        visible: { x: 0, transition: { type: 'tween', ease: 'circOut' } },
-        exit: { x: '100%', transition: { type: 'tween', ease: 'circIn' } }
-    };
-
-    const linkVariants = {
-        hidden: { opacity: 0, x: 20 },
-        visible: { opacity: 1, x: 0 }
-    };
-  
-    return (
-      <>
-        <header className="bg-white/80 backdrop-blur-md text-gray-800 p-4 sticky top-0 z-50 border-b border-gray-200">
-          <div className="container mx-auto flex justify-between items-center">
-            <Link to="/" className="flex items-center gap-2">
-              <KeyRound className="text-blue-600" size={28} />
-              <span className="text-2xl font-extrabold text-gray-900 tracking-tight">xKeyAuction</span>
-            </Link>
-  
-            <nav className="hidden md:flex items-center space-x-8 text-sm font-medium">
-              <a href="#featured" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-                <Star size={16} />
-                <span>Featured</span>
-              </a>
-              <Link to="/vehicles" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-                <Grid size={16} />
-                <span>All Vehicles</span>
-              </Link>
-              <Link to="/contact" className="flex items-center gap-2 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-gray-900 transition-colors">
-                <Phone size={16} />
-                <span>Contact Us</span>
-              </Link>
-            </nav>
-  
-            <div className="md:hidden">
-              <button onClick={toggleMobileMenu} aria-label="Open menu">
-                <Menu size={28} className="text-gray-800" />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <AnimatePresence>
-            {isMobileMenuOpen && (
-                <motion.div 
-                    className="fixed inset-0 bg-white z-50 flex flex-col p-4 md:hidden"
-                    variants={menuVariants} initial="hidden" animate="visible" exit="exit"
-                >
-                    <div className="flex justify-between items-center mb-10">
-                        <Link to="/" className="flex items-center gap-2" onClick={toggleMobileMenu}>
-                            <KeyRound className="text-blue-600" size={28} />
-                            <span className="text-2xl font-extrabold text-gray-900 tracking-tight">xKeyAuction</span>
-                        </Link>
-                        <button onClick={toggleMobileMenu} aria-label="Close menu">
-                            <X size={32} className="text-gray-800" />
-                        </button>
-                    </div>
-                    <motion.nav 
-                        className="flex flex-col items-center gap-8"
-                        initial="hidden" animate="visible" transition={{ staggerChildren: 0.1, delayChildren: 0.2 }}
-                    >
-                        <motion.a variants={linkVariants} href="#featured" onClick={toggleMobileMenu} className="text-3xl font-bold text-gray-800">Featured</motion.a>
-                        <motion.a variants={linkVariants} href="#categories" onClick={toggleMobileMenu} className="text-3xl font-bold text-gray-800">Categories</motion.a>
-                        <motion.div variants={linkVariants}><Link to="/vehicles" onClick={toggleMobileMenu} className="text-3xl font-bold text-gray-800">All Vehicles</Link></motion.div>
-                        <motion.div variants={linkVariants}><Link to="/contact" onClick={toggleMobileMenu} className="text-3xl font-bold text-white bg-gray-800 py-3 px-6 rounded-lg w-full text-center mt-6">Contact Us</Link></motion.div>
-                    </motion.nav>
-                </motion.div>
-            )}
-        </AnimatePresence>
-      </>
-    );
-};
-
-// --- NEW: Reusable component for scroll-triggered animations ---
-const AnimatedSection = ({ children, className }) => {
+// --- NEW ADVANCED GRAVITY/BOUNCE IMAGE COMPONENT ---
+const GravityImage = ({ src, className, animationProps, initialDelay }) => {
     const controls = useAnimation();
-    const [ref, inView] = useInView({
-        triggerOnce: true,
-        threshold: 0.1,
-    });
 
     useEffect(() => {
-        if (inView) {
-            controls.start('visible');
-        }
-    }, [controls, inView]);
+        // This function defines the two-stage animation sequence.
+        const sequence = async () => {
+            // --- STAGE 1: The Initial Drop ---
+            await controls.start({
+                y: 0,
+                opacity: 0.7,
+                transition: {
+                    type: "spring",
+                    stiffness: 80,
+                    damping: 8,
+                    mass: 1.5,
+                    delay: initialDelay,
+                },
+            });
+
+            // --- STAGE 2: The Continuous Bounce ---
+            controls.start({
+                x: animationProps.x,
+                y: animationProps.y,
+                rotate: animationProps.rotate,
+                transition: {
+                    duration: animationProps.duration,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                    repeatType: 'reverse', // Bounces back and forth
+                },
+            });
+        };
+        sequence();
+    }, [controls, animationProps, initialDelay]);
 
     return (
         <motion.div
-            ref={ref}
+            className={`absolute z-0 ${className} hidden md:block`}
+            initial={{ y: "-100vh", opacity: 0 }} // Starts way off-screen
             animate={controls}
-            initial="hidden"
-            variants={{
-                hidden: { opacity: 0, y: 50 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+            whileHover={{
+                scale: 1.15,
+                y: -20, // Bounces up when hovered
+                transition: { type: 'spring', stiffness: 400, damping: 10 }
             }}
-            className={className}
         >
-            {children}
+            <img 
+                src={src} 
+                alt="Decorative vehicle" 
+                className="w-full h-full object-contain drop-shadow-2xl" 
+            />
         </motion.div>
     );
 };
 
+
+// --- HERO SECTION ---
 const HeroSection = () => {
-    const containerVariants = { hidden: {}, visible: { transition: { staggerChildren: 0.15, delayChildren: 0.4 } } };
+    const dispatch = useDispatch();
+    const { heroImages } = useSelector((state) => state.heroImages);
+
+    useEffect(() => {
+        dispatch(getHeroImages());
+    }, [dispatch]);
+
+    const containerVariants = { hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 0.5 } } };
     const cardVariants = { hidden: { y: 30, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } } };
     const categories = [ { name: 'HCV', fullName: 'Heavy Motor Vehicle', icon: Truck, link: '/vehicles?category=HCV' }, { name: 'LMV', fullName: 'Light Motor Vehicle', icon: Car, link: '/vehicles?category=LMV' }, { name: 'MMV', fullName: 'Medium Motor Vehicle', icon: Bus, link: '/vehicles?category=MMV' }, ];
+    
+    // Define unique physics paths for each image
+    const physicsPaths = [
+        { x: ["-5%", "20%", "-10%"], y: ["0%", "40%", "10%"], rotate: [0, -10, 5], duration: 20 },
+        { x: ["5%", "-25%", "15%"], y: ["0%", "-30%", "20%"], rotate: [0, 15, -5], duration: 25 },
+        { x: ["-10%", "5%", "10%"], y: ["0%", "35%", "-10%"], rotate: [0, 5, -10], duration: 18 },
+    ];
+    
+    // Define position classes for each image
+    const positionClasses = [
+        "w-52 h-52 top-[15%] left-[5%]",
+        "w-48 h-48 top-[40%] right-[8%]",
+        "w-32 h-32 top-[55%] left-[20%] hidden xl:block",
+    ];
+
     return (
-        <section className="bg-white text-gray-900 flex flex-col justify-center items-center text-center pt-24 pb-20 px-4">
-            <motion.h2 className="text-4xl md:text-6xl font-extrabold mb-4" initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
-                Find Your Next Commercial Vehicle
-            </motion.h2>
-            <motion.p className="text-lg text-gray-500 mb-12 max-w-2xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                The most trusted platform for high-quality, pre-owned commercial vehicles at unbeatable prices.
-            </motion.p>
-            <motion.div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-sm md:max-w-4xl" variants={containerVariants} initial="hidden" animate="visible">
-                {categories.map((cat, index) => (
-                    <motion.div key={cat.name} variants={cardVariants} className={index === 2 ? "col-span-2 md:col-span-1" : ""}>
-                        <Link to={cat.link} className="group">
-                            <motion.div className="bg-slate-50 h-full p-6 rounded-xl border border-slate-200 text-center cursor-pointer transition-colors hover:bg-white hover:border-blue-300" whileHover={{ y: -5, boxShadow: "0px 10px 20px rgba(0,0,0,0.05)" }} whileTap={{ scale: 0.95 }}>
-                                <cat.icon size={36} className="mx-auto text-gray-400 mb-4 transition-colors group-hover:text-blue-600" />
-                                <h3 className="text-xl font-bold">{cat.name}</h3>
-                                <p className="text-gray-500 text-sm">{cat.fullName}</p>
-                            </motion.div>
-                        </Link>
-                    </motion.div>
-                ))}
-            </motion.div>
+        <section className="relative bg-white text-slate-900 flex flex-col justify-center items-center text-center pt-32 pb-24 px-4 sm:px-6 lg:px-8 min-h-[90vh] overflow-hidden">
+            {heroImages.slice(0, 3).map((image, index) => (
+                <GravityImage 
+                    key={image._id}
+                    src={image.url} 
+                    className={positionClasses[index]}
+                    animationProps={physicsPaths[index]}
+                    initialDelay={0.5 + index * 0.3} // Stagger the initial drop
+                />
+            ))}
+            
+            <div className="relative z-10 flex flex-col items-center">
+                <motion.h1 
+                    className="text-4xl sm:text-5xl md:text-7xl font-extrabold mb-4" 
+                    initial={{ opacity: 0, y: -30 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                    Find Your Next Commercial Vehicle
+                </motion.h1>
+                <motion.p 
+                    className="text-base sm:text-lg text-slate-500 mb-12 max-w-2xl" 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                    The most trusted platform for high-quality, pre-owned commercial vehicles at unbeatable prices.
+                </motion.p>
+                <motion.div 
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl" 
+                    variants={containerVariants} 
+                    initial="hidden" 
+                    animate="visible"
+                >
+                    {categories.map((cat) => (
+                        <motion.div key={cat.name} variants={cardVariants}>
+                            <Link to={cat.link} className="group">
+                                <motion.div 
+                                    className="bg-white/60 backdrop-blur-md h-full p-8 rounded-2xl border border-slate-200/80 text-center cursor-pointer transition-all duration-300 hover:bg-white hover:border-slate-300 hover:shadow-xl hover:-translate-y-1"
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    <cat.icon size={36} className="mx-auto text-slate-400 mb-4 transition-colors group-hover:text-blue-600" />
+                                    <h3 className="text-xl font-bold">{cat.name}</h3>
+                                    <p className="text-slate-500 text-sm">{cat.fullName}</p>
+                                </motion.div>
+                            </Link>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            </div>
         </section>
     );
 };
 
-// --- NEW: Staggered animation variants for grid items ---
-const gridContainerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
+// --- "WHY CHOOSE US" SECTION (No changes here) ---
+const WhyChooseUsSection = () => {
+    const features = [
+        { icon: ShieldCheck, title: "Unmatched Quality", description: "Every vehicle undergoes a comprehensive multi-point inspection to ensure it meets the xKey Gold Standard." },
+        { icon: HandCoins, title: "Transparent Process", description: "We provide detailed history reports and transparent pricing with no hidden fees, so you can buy with confidence." },
+        { icon: Users, title: "Dedicated Support", description: "Our team of experts is your dedicated partner, ensuring a seamless and supportive experience from start to finish." },
+    ];
+    
+    const containerVariants = {
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.2 } }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, scale: 0.95, y: 20 },
+        visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0.0, 0.2, 1] } }
+    };
+
+    return (
+        <section id="features" className="py-20 sm:py-24 bg-slate-50/50">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <motion.div 
+                    className="text-center mb-16 max-w-3xl mx-auto"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.5 }}
+                    transition={{ duration: 0.6 }}
+                >
+                    <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tighter">Built on a Foundation of Trust</h2>
+                    <p className="text-base sm:text-lg text-slate-600">Your peace of mind is our priority. We've built our service on three core principles that ensure a seamless experience.</p>
+                </motion.div>
+                
+                <motion.div 
+                    className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12"
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                >
+                    {features.map((feature) => (
+                        <motion.div 
+                            key={feature.title} 
+                            className="text-center p-6 transition-all duration-300 group"
+                            variants={itemVariants}
+                        >
+                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-white shadow-sm mb-6 mx-auto border border-slate-200/80 transition-all duration-300 group-hover:bg-blue-600 group-hover:shadow-lg group-hover:scale-110">
+                                <feature.icon className="h-8 w-8 text-blue-600 transition-colors duration-300 group-hover:text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
+                            <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            </div>
+        </section>
+    );
 };
 
-const gridItemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-};
 
+// --- Main Page Component ---
 const HomePage = () => {
-    const [vehicles, setVehicles] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const dispatch = useDispatch();
+    const { vehicles, isLoading, isError, message } = useSelector(
+      (state) => state.vehicles
+    );
 
     useEffect(() => {
-        const fetchHomePageData = async () => {
-            try {
-                const allVehicles = await vehicleService.getVehicles();
-                setVehicles(allVehicles);
-                const uniqueCategories = [...new Set(allVehicles.map(v => v.category))];
-                setCategories(uniqueCategories);
-            } catch (error) {
-                toast.error('Could not fetch page data.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchHomePageData();
-    }, []);
+        if (isError) {
+            toast.error(message || 'Could not fetch page data.');
+        }
+        
+        dispatch(getVehicles());
+
+        return () => {
+            dispatch(resetVehicles());
+        }
+    }, [isError, message, dispatch]);
+
+    const featuredVehicles = useMemo(() => {
+        return vehicles
+            .filter(v => v.status === 'listed')
+            .slice(0, 4);
+    }, [vehicles]);
+
+    const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
+    const gridContainerVariants = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } };
+    const gridItemVariants = { hidden: { y: 30, opacity: 0, scale: 0.9 }, visible: { y: 0, opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } } };
 
     return (
         <div className="bg-white">
             <Header />
             <main>
                 <HeroSection />
-
-                {/* --- UPDATED: Featured Vehicles Section with Animations --- */}
-                <AnimatedSection id="featured" className="bg-slate-50/70 border-t border-slate-100 py-20 px-4">
-                    <div className="container mx-auto">
-                        <h3 className="text-4xl font-bold text-center mb-12 text-gray-900">Featured Vehicles</h3>
-                        {isLoading ? (
+                <WhyChooseUsSection />
+                <section id="featured-vehicles" className="bg-white border-y border-slate-200/80 py-20 sm:py-24">
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                        <motion.div ref={ref} initial="hidden" animate={inView ? "visible" : "hidden"} variants={{ visible: { opacity: 1, y: 0 }, hidden: { opacity: 0, y: 30 } }} transition={{ duration: 0.6 }} className="text-center max-w-3xl mx-auto mb-12">
+                            <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight text-gradient">The Fleet</h2>
+                            <p className="text-base sm:text-lg text-slate-600">A curated selection of our finest vehicles, certified and ready for their next mission.</p>
+                        </motion.div>
+                        
+                        {isLoading && featuredVehicles.length === 0 ? (
                             <div className="flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-500" /></div>
                         ) : (
-                            <motion.div 
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-                                variants={gridContainerVariants}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.2 }}
-                            >
-                                {vehicles.slice(0, 4).map((vehicle) => (
+                            <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" variants={gridContainerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
+                                {featuredVehicles.map((vehicle) => (
                                     <motion.div key={vehicle._id} variants={gridItemVariants}>
                                         <VehicleCard vehicle={vehicle} />
                                     </motion.div>
                                 ))}
                             </motion.div>
                         )}
-                    </div>
-                </AnimatedSection>
 
-                {/* --- UPDATED: Categories Section with Animations --- */}
-                <AnimatedSection id="categories" className="bg-white py-20 px-4">
-                    <div className="container mx-auto">
-                        <h3 className="text-4xl font-bold text-center mb-12 text-gray-900">Browse Other Categories</h3>
-                        {isLoading ? (
-                            <div className="flex justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-500" /></div>
-                        ) : (
-                             <motion.div 
-                                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
-                                variants={gridContainerVariants}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.2 }}
-                            >
-                                {categories.map((category) => (
-                                    <motion.div key={category} variants={gridItemVariants}>
-                                        <CategoryCard category={category} />
-                                    </motion.div>
-                                ))}
-                            </motion.div>
+                        { !isLoading && featuredVehicles.length === 0 && (
+                           <div className="text-center text-slate-500 py-10">
+                               <p>No featured vehicles available at the moment. Please check back soon!</p>
+                           </div>
                         )}
+                        
+                        <div className="text-center mt-16">
+                            <Link to="/vehicles" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors text-lg">Browse All Available Units &rarr;</Link>
+                        </div>
                     </div>
-                </AnimatedSection>
-
+                </section>
             </main>
-            <AnimatedSection>
-                <footer className="bg-white text-gray-500 p-8 text-center border-t border-gray-200">
-                    <p>&copy; {new Date().getFullYear()} xKeyAuction. Made with ❤️ @myloveankyy.</p>
-                </footer>
-            </AnimatedSection>
+            <footer className="bg-slate-50/50 text-slate-500 p-8 text-center border-t border-slate-200/80">
+                <p>&copy; {new Date().getFullYear()} xKeyAuction. All rights reserved.</p>
+            </footer>
         </div>
     );
 };

@@ -1,85 +1,93 @@
-// frontend/src/pages/admin/AdminPinPage.jsx
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { LockKeyhole } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { KeyRound, Lock, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const AdminPinPage = () => {
   const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // --- SECURITY ---
-  // This is your hardcoded 6-digit PIN.
-  // For better security in a real production environment,
-  // this would be stored as an environment variable.
-  const CORRECT_PIN = '987654';
+  // --- SECURITY BEST PRACTICE ---
+  // The PIN is now fetched from environment variables.
+  // In your frontend folder, create a .env file and add:
+  // REACT_APP_ADMIN_PIN=1234
+  const CORRECT_PIN = process.env.REACT_APP_ADMIN_PIN;
+
+  useEffect(() => {
+    const pinAuth = sessionStorage.getItem('adminPinAuthenticated');
+    if (pinAuth === 'true') {
+      navigate('/admin/login');
+    }
+  }, [navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (pin === CORRECT_PIN) {
-      // If the PIN is correct, set a flag in sessionStorage.
-      // sessionStorage is temporary and clears when the browser tab is closed.
-      sessionStorage.setItem('isAdminPinVerified', 'true');
-      
-      // Redirect to the actual signup page.
-      navigate('/admin/signup');
-    } else {
-      setError('Invalid PIN. Please try again.');
-      setPin('');
-    }
+    setIsLoading(true);
+
+    // Simulate a short delay for better UX
+    setTimeout(() => {
+      if (pin === CORRECT_PIN) {
+        sessionStorage.setItem('adminPinAuthenticated', 'true');
+        navigate('/admin/login');
+      } else {
+        toast.error('Invalid PIN. Please try again.');
+        setPin(''); // Clear input on error
+      }
+      setIsLoading(false);
+    }, 500);
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-100">
-      <motion.div
-        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl"
-      >
-        <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-4">
-                <LockKeyhole className="w-8 h-8 text-blue-600" />
-            </div>
-          <h1 className="text-3xl font-bold text-slate-900">Admin Access</h1>
-          <p className="mt-2 text-slate-600">Enter the security PIN to proceed to registration.</p>
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
+       <div className="w-full max-w-sm">
+        <div className="flex items-center justify-center gap-2 font-semibold mb-6">
+            <Link to="/" className="flex items-center gap-2 font-semibold">
+              <KeyRound className="h-7 w-7 text-blue-600" />
+              <span className="text-2xl text-slate-900">xKeyAuction</span>
+            </Link>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="pin" className="sr-only">
-              PIN
-            </label>
-            <input
-              id="pin"
-              name="pin"
-              type="password"
-              autoComplete="off"
-              required
-              maxLength="6"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              className="w-full px-4 py-3 text-center text-2xl tracking-[.5em] font-mono bg-slate-100 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              placeholder="••••••"
-            />
+        <div className="bg-white p-8 rounded-2xl shadow-md border border-slate-200/80">
+          <div className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+              <Lock className="h-6 w-6 text-slate-500" />
+            </div>
+            <h2 className="mt-4 text-2xl font-bold text-slate-900">Admin Verification</h2>
+            <p className="mt-2 text-slate-500">Enter your security PIN to proceed.</p>
           </div>
-
-          {error && (
-            <p className="text-sm text-center text-red-600">{error}</p>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              className="w-full px-4 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105"
-            >
-              Verify
-            </button>
-          </div>
-        </form>
-      </motion.div>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="rounded-md">
+              <input
+                id="pin-code"
+                name="pin"
+                type="password"
+                required
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                className="appearance-none block w-full px-3 py-3 text-center text-2xl tracking-[.5em] bg-slate-50 border border-slate-300 placeholder-slate-400 text-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••"
+                maxLength="4"
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading || pin.length < 4}
+                className="w-full flex justify-center py-3 px-4 text-sm font-bold rounded-lg text-white bg-slate-800 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-800 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : (
+                  'Unlock'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+       </div>
     </div>
   );
 };

@@ -1,79 +1,125 @@
 const mongoose = require('mongoose');
 
+const offerSchema = new mongoose.Schema({
+  offerBy: {
+    type: String,
+    required: true,
+    enum: ['seller', 'admin'],
+  },
+  amount: {
+    type: Number,
+    required: true,
+  },
+  message: {
+    type: String, 
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const vehicleSchema = new mongoose.Schema(
   {
+    // --- User & Listing Type ---
+    seller: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: 'User',
+    },
+    sellerType: {
+      type: String,
+      required: true,
+      enum: ['xKey', 'user'],
+    },
+    listingType: {
+      type: String,
+      required: true,
+      enum: ['listing', 'instant_sell'],
+    },
+
+    // --- Expanded Status Enum ---
+    status: {
+      type: String,
+      required: true,
+      enum: [
+        'pending_approval',
+        'listed',
+        'rejected',
+        'pending_valuation',
+        'negotiating',
+        'sold',
+      ],
+      default: 'pending_approval',
+    },
+    
+    // --- Core Vehicle Details (WITH NEW PRICE FIELD) ---
     vehicleName: {
       type: String,
       required: [true, 'Please add a vehicle name'],
     },
     category: {
       type: String,
-      required: [true, 'Please add a category'],
+      required: [true, 'Please specify a category'],
     },
-    // --- Key Specification Fields ---
+    // --- NEW FIELD ADDED HERE ---
+    exShowroomPrice: {
+      type: Number, // This is the Original / Ex-Showroom price. It's optional.
+    },
+    // This is the seller's initial asking price
+    sellingPrice: {
+      type: Number,
+      required: [true, 'Please add the asking price'],
+    },
     age: {
       type: String,
+      required: [true, 'Please add the vehicle age'],
     },
     condition: {
       type: String,
+      required: [true, 'Please specify the vehicle condition'],
     },
-    tyre: {
+    tyreCondition: {
       type: String,
+      required: [true, 'Please specify the tyre condition'],
     },
-    mileage: { // <-- ADDED
-      type: String, 
-    },
-    engine: { // <-- ADDED
+    mileage: {
       type: String,
+      required: [true, 'Please add the mileage'],
     },
-    transmission: { // <-- ADDED
+    fuelType: {
       type: String,
+      required: [true, 'Please specify the fuel type'],
     },
-    fuelType: { // <-- ADDED
+    seatingCapacity: {
       type: String,
-    },
-    seating: { // <-- ADDED
-      type: String,
-    },
-    // --- Pricing ---
-    originalPrice: {
-      type: Number,
-      required: [true, 'Please add the original price'],
-    },
-    xKeyPrice: {
-      type: Number,
-      required: [true, 'Please add the xKey price'],
-    },
-    // --- Descriptions & Details ---
-    shortDescription: {
-      type: String,
+      required: [true, 'Please add the seating capacity'],
     },
     longDescription: {
       type: String,
+      required: [true, 'Please add a detailed description'],
     },
-    pros: {
-      type: [String], // Already correct for multiple points
-    },
-    cons: {
-      type: [String], // Already correct for multiple points
-    },
-    // --- Images ---
     thumbnail: {
       type: String,
       required: [true, 'Please add a thumbnail image path'],
     },
-    gallery: {
+    gallery: { 
       type: [String],
-    },
-    // --- Kept for potential future use ---
-    reviews: {
-      type: Array,
       default: [],
     },
-    comments: {
-      type: Array,
-      default: [],
+
+    // --- Negotiation & Admin Feedback ---
+    valuationHistory: [offerSchema],
+    rejectionReason: {
+      type: String,
     },
+    
+    // --- Optional Details ---
+    engine: { type: String },
+    transmission: { type: String },
+    shortDescription: { type: String },
+    pros: { type: [String] },
+    cons: { type: [String] },
   },
   {
     timestamps: true,

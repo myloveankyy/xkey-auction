@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+// frontend/src/pages/admin/AddVehicle.jsx
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import vehicleService from '../../features/vehicles/vehicleService';
 import { Loader2, ArrowLeft, Plus } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { useDispatch, useSelector } from 'react-redux';
+import { createVehicle, reset } from '../../features/vehicles/vehicleSlice';
 
-// --- MODIFIED: Tiptap Toolbar with a more minimal active state ---
 const TiptapToolbar = ({ editor }) => {
   if (!editor) return null;
   const buttonClass = "p-2 rounded-md hover:bg-slate-100 transition-colors";
@@ -23,35 +25,71 @@ const TiptapToolbar = ({ editor }) => {
 
 const AddVehicle = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isLoading, isError, isSuccess, message } = useSelector(state => state.vehicles);
   
-  // State and handlers remain the same
+  // --- FORM STATE UPDATED TO MATCH NEW MODEL ---
   const [formData, setFormData] = useState({
-    vehicleName: '', category: '', originalPrice: '', xKeyPrice: '',
-    age: '', condition: '', tyre: '', mileage: '', engine: '', transmission: '', fuelType: '', seating: '',
+    vehicleName: '', category: '', exShowroomPrice: '', sellingPrice: '',
+    age: '', condition: '', tyreCondition: '', mileage: '', engine: '', transmission: '', fuelType: '', seatingCapacity: '',
     pros: '', cons: '',
   });
   const [longDescription, setLongDescription] = useState('');
   const [thumbnail, setThumbnail] = useState(null);
   const [gallery, setGallery] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  
   const editor = useEditor({
     extensions: [StarterKit], content: longDescription, onUpdate: ({ editor }) => { setLongDescription(editor.getHTML()); },
     editorProps: { attributes: { class: 'prose min-h-[150px] max-w-none p-4 bg-white border-x border-b border-slate-300 rounded-b-lg focus:outline-none' } },
   });
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(message);
+      dispatch(reset()); 
+    }
+    if (isSuccess) {
+      toast.success('Vehicle added successfully!');
+      navigate('/admin/vehicles');
+    }
+    return () => {
+        dispatch(reset());
+    };
+  }, [isError, isSuccess, message, navigate, dispatch]);
+
   const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleThumbnailChange = (e) => { const file = e.target.files[0]; if (file) { setThumbnail(file); setThumbnailPreview(URL.createObjectURL(file)); } };
-  const handleGalleryChange = (e) => { const files = Array.from(e.target.files); setGallery(files); const previews = files.map(file => URL.createObjectURL(file)); setGalleryPreviews(previews); };
-  const handleSubmit = async (e) => {
-    e.preventDefault(); setIsLoading(true); const vehicleFormData = new FormData();
-    for (const key in formData) { vehicleFormData.append(key, formData[key]); }
+
+  const handleThumbnailChange = (e) => { 
+    const file = e.target.files[0]; 
+    if (file) { 
+      setThumbnail(file); 
+      setThumbnailPreview(URL.createObjectURL(file)); 
+    } 
+  };
+
+  const handleGalleryChange = (e) => { 
+    const files = Array.from(e.target.files); 
+    setGallery(files); 
+    const previews = files.map(file => URL.createObjectURL(file)); 
+    setGalleryPreviews(previews); 
+  };
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const vehicleFormData = new FormData();
+    for (const key in formData) {
+      vehicleFormData.append(key, formData[key]);
+    }
     vehicleFormData.append('longDescription', longDescription);
-    if (thumbnail) vehicleFormData.append('thumbnail', thumbnail);
-    if (gallery.length > 0) { gallery.forEach(file => vehicleFormData.append('gallery', file)); }
-    try { await vehicleService.createVehicle(vehicleFormData); toast.success('Vehicle added successfully!'); navigate('/admin/vehicles'); } 
-    catch (error) { const message = (error.response?.data?.message) || error.message || 'An error occurred'; toast.error(message); } 
-    finally { setIsLoading(false); }
+    if (thumbnail) {
+      vehicleFormData.append('thumbnail', thumbnail);
+    }
+    if (gallery.length > 0) {
+      gallery.forEach(file => vehicleFormData.append('gallery', file));
+    }
+    dispatch(createVehicle(vehicleFormData));
   };
 
   const inputClass = "w-full p-2 bg-white rounded-md border border-slate-300 text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none";
@@ -72,37 +110,31 @@ const AddVehicle = () => {
         </div>
       </header>
       
-      {/* --- MODIFIED: Form is now one cohesive white card --- */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <form onSubmit={handleSubmit} className="space-y-8">
-          
-          {/* Section 1 */}
           <div>
             <h2 className="text-lg font-semibold text-slate-700 mb-4 border-b border-slate-200 pb-3">Core Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               <div><label className={labelClass}>Vehicle Name*</label><input type="text" name="vehicleName" value={formData.vehicleName} onChange={handleChange} required className={inputClass} /></div>
               <div><label className={labelClass}>Category*</label><input type="text" name="category" value={formData.category} onChange={handleChange} required className={inputClass} placeholder="e.g., LMV, HCV" /></div>
-              <div><label className={labelClass}>Original Price (₹)*</label><input type="number" name="originalPrice" value={formData.originalPrice} onChange={handleChange} required className={inputClass} /></div>
-              <div><label className={labelClass}>xKey Price (₹)*</label><input type="number" name="xKeyPrice" value={formData.xKeyPrice} onChange={handleChange} required className={inputClass} /></div>
+              {/* --- PRICE FIELDS UPDATED FOR ADMIN LOGIC --- */}
+              <div><label className={labelClass}>Ex-Showroom Price (₹)</label><input type="number" name="exShowroomPrice" value={formData.exShowroomPrice} onChange={handleChange} className={inputClass} /></div>
+              <div><label className={labelClass}>Asking Price (₹)*</label><input type="number" name="sellingPrice" value={formData.sellingPrice} onChange={handleChange} required className={inputClass} /></div>
             </div>
           </div>
-
-          {/* Section 2 */}
           <div className="pt-6 border-t border-slate-200">
             <h2 className="text-lg font-semibold text-slate-700 mb-4">Key Specifications</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <div><label className={labelClass}>Age</label><input type="text" name="age" value={formData.age} onChange={handleChange} className={inputClass} placeholder="e.g., 3 Years"/></div>
               <div><label className={labelClass}>Condition</label><input type="text" name="condition" value={formData.condition} onChange={handleChange} className={inputClass} placeholder="e.g., Good"/></div>
-              <div><label className={labelClass}>Tyre Condition</label><input type="text" name="tyre" value={formData.tyre} onChange={handleChange} className={inputClass} placeholder="e.g., 75%"/></div>
+              <div><label className={labelClass}>Tyre Condition</label><input type="text" name="tyreCondition" value={formData.tyreCondition} onChange={handleChange} className={inputClass} placeholder="e.g., 75%"/></div>
               <div><label className={labelClass}>Mileage</label><input type="text" name="mileage" value={formData.mileage} onChange={handleChange} className={inputClass} placeholder="e.g., 22 KMPL"/></div>
               <div><label className={labelClass}>Engine</label><input type="text" name="engine" value={formData.engine} onChange={handleChange} className={inputClass} placeholder="e.g., AC Induction"/></div>
               <div><label className={labelClass}>Transmission</label><input type="text" name="transmission" value={formData.transmission} onChange={handleChange} className={inputClass} placeholder="e.g., Manual"/></div>
               <div><label className={labelClass}>Fuel Type</label><input type="text" name="fuelType" value={formData.fuelType} onChange={handleChange} className={inputClass} placeholder="e.g., Diesel"/></div>
-              <div><label className={labelClass}>Seating Capacity</label><input type="text" name="seating" value={formData.seating} onChange={handleChange} className={inputClass} placeholder="e.g., 7 Seater"/></div>
+              <div><label className={labelClass}>Seating Capacity</label><input type="text" name="seatingCapacity" value={formData.seatingCapacity} onChange={handleChange} className={inputClass} placeholder="e.g., 7 Seater"/></div>
             </div>
           </div>
-
-          {/* Other sections with the same improved structure... */}
           <div className="pt-6 border-t border-slate-200"><h2 className="text-lg font-semibold text-slate-700 mb-4">Pros & Cons</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className={labelClass}>Pros <span className="text-xs text-slate-500 font-normal">(one per line)</span></label><textarea name="pros" value={formData.pros} onChange={handleChange} rows="5" className={inputClass}></textarea></div><div><label className={labelClass}>Cons <span className="text-xs text-slate-500 font-normal">(one per line)</span></label><textarea name="cons" value={formData.cons} onChange={handleChange} rows="5" className={inputClass}></textarea></div></div></div>
           <div className="pt-6 border-t border-slate-200"><h2 className="text-lg font-semibold text-slate-700 mb-4">Images</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8"><div><label className={labelClass}>Thumbnail Image*</label><input type="file" name="thumbnail" onChange={handleThumbnailChange} required accept="image/*" className={fileInputClass}/>{thumbnailPreview && <img src={thumbnailPreview} alt="Thumbnail Preview" className="mt-4 h-32 w-auto object-cover rounded-lg border border-slate-200" />}</div><div><label className={labelClass}>Gallery Images</label><input type="file" name="gallery" onChange={handleGalleryChange} multiple accept="image/*" className={fileInputClass}/>{galleryPreviews.length > 0 && <div className="mt-4 flex gap-2 flex-wrap">{galleryPreviews.map((src, i) => <img key={i} src={src} alt={`Gallery Preview ${i}`} className="h-24 w-auto object-cover rounded-lg border border-slate-200" />)}</div>}</div></div></div>
           <div className="pt-6 border-t border-slate-200"><h2 className="text-lg font-semibold text-slate-700 mb-4">Long Description</h2><TiptapToolbar editor={editor} /><EditorContent editor={editor} /></div>
