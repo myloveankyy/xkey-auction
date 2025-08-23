@@ -20,26 +20,26 @@ const createUploadConfig = upload.fields([
   { name: 'gallery', maxCount: 10 }
 ]);
 
-// --- ISOLATION TEST: ONLY THIS ROUTE IS ACTIVE ---
+// --- PUBLIC ROUTES ---
 router.get('/', getPublicVehicles);
 
 // --- SELLER PROTECTED ROUTES ---
-// router.get('/my-listings', protect, getMyListings);
-// router.post('/', protect, createUploadConfig, createVehicle);
+router.get('/my-listings', protect, getMyListings);
+router.post('/', protect, createUploadConfig, createVehicle);
 
 // --- PUBLIC DYNAMIC ROUTE ---
-// router.get('/:id', getVehicleById);
+router.get('/:id', getVehicleById);
 
 // --- ADMIN PROTECTED ROUTES ---
-// router.get('/admin/all', protect, admin, getAllVehiclesAsAdmin);
-// router.put('/:id/approve-listing', protect, admin, approveListing);
-// router.put('/:id/reject-listing', protect, admin, rejectListing);
+router.get('/admin/all', protect, admin, getAllVehiclesAsAdmin);
+router.put('/:id/approve-listing', protect, admin, approveListing);
+router.put('/:id/reject-listing', protect, admin, rejectListing);
 
 // --- SHARED PROTECTED ROUTES (SELLER & ADMIN) ---
-// router.delete('/:id', protect, deleteVehicle);
+router.delete('/:id', protect, deleteVehicle);
 
 // --- NEGOTIATION ROUTES ---
-// router.post('/:id/negotiate', protect, submitNegotiationOffer);
-// router.post('/:id/accept-offer', protect, acceptOffer);
+router.post('/:id/negotiate', protect, submitNegotiationOffer);
+router.post('/:id/accept-offer', protect, acceptOffer);
 
 module.exports = router;
