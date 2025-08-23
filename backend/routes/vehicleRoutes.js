@@ -21,32 +21,25 @@ const createUploadConfig = upload.fields([
 ]);
 
 // --- PUBLIC ROUTES ---
-router.get('/', getPublicVehicles); // Gets public vehicles for homepage
+router.get('/', getPublicVehicles);
 
 // --- SELLER PROTECTED ROUTES ---
-// IMPORTANT: Place specific static routes BEFORE general dynamic routes
-router.get('/my-listings', protect, getMyListings); // Get all vehicles submitted by the logged-in user
-router.post('/', protect, createUploadConfig, createVehicle); // Create a new vehicle listing or instant sell request
-
+router.get('/my-listings', protect, getMyListings);
+router.post('/', protect, createUploadConfig, createVehicle);
 
 // --- PUBLIC DYNAMIC ROUTE ---
-// This route must come AFTER /my-listings to avoid 'my-listings' being treated as an ID
-router.get('/:id', getVehicleById); // Get details for a single vehicle
-
+router.get('/:id', getVehicleById);
 
 // --- ADMIN PROTECTED ROUTES ---
-router.get('/admin/all', protect, admin, getAllVehiclesAsAdmin); // Get ALL vehicles for the admin dashboard
-
-router.put('/:id/approve-listing', protect, admin, approveListing); // Approve a pending user listing
-router.put('/:id/reject-listing', protect, admin, rejectListing); // Reject a pending user listing
-
+router.get('/admin/all', protect, admin, getAllVehiclesAsAdmin);
+router.put('/:id/approve-listing', protect, admin, approveListing);
+router.put('/:id/reject-listing', protect, admin, rejectListing);
 
 // --- SHARED PROTECTED ROUTES (SELLER & ADMIN) ---
-router.delete('/:id', protect, deleteVehicle); // Delete a vehicle (accessible by owner or admin)
+router.delete('/:id', protect, deleteVehicle);
 
 // --- NEGOTIATION ROUTES ---
-router.post('/:id/negotiate', protect, submitNegotiationOffer); // Submit an offer (admin) or counter-offer (seller)
-router.post('/:id/accept-offer', protect, acceptOffer); // Accept the latest offer on the table
-
+router.post('/:id/negotiate', protect, submitNegotiationOffer);
+router.post('/:id/accept-offer', protect, acceptOffer);
 
 module.exports = router;

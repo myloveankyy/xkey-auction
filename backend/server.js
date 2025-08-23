@@ -40,10 +40,10 @@ app.use(express.json());
 // Static path for uploaded images, accessible from anywhere
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- DEBUGGING: ISOLATING THE FAULTY ROUTE FILE ---
+// API Routes
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
-// app.use('/api/users', require('./routes/userRoutes'));
-// app.use('/api/hero-images', require('./routes/heroImageRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/hero-images', require('./routes/heroImageRoutes'));
 
 
 // --- DEPLOYMENT CODE START ---
