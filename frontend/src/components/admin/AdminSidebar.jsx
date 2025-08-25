@@ -1,21 +1,20 @@
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-// --- NEW: Import useDispatch and the logout action ---
 import { useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
-import { LayoutDashboard, Truck, KeyRound, LogOut, GalleryHorizontal, Users } from 'lucide-react';
+// --- NEW IMPORTS: TrendingUp for Analytics ---
+import { LayoutDashboard, Truck, KeyRound, LogOut, GalleryHorizontal, Users, Megaphone, ClipboardList, TrendingUp } from 'lucide-react';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch(); // --- NEW: Get the dispatch function ---
+  const dispatch = useDispatch();
 
   const linkClass = "flex items-center gap-3 rounded-lg px-3 py-2 text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900";
   const activeLinkClass = "flex items-center gap-3 rounded-lg bg-slate-100 px-3 py-2 text-slate-900 font-semibold transition-all";
 
-  // --- REFACTORED LOGOUT HANDLER ---
   const handleLogout = () => {
-    dispatch(logout()); // Dispatch the global logout action
-    navigate('/admin/pin'); // Redirect to the PIN page, the start of the admin flow
+    dispatch(logout());
+    navigate('/admin/pin');
   };
 
   return (
@@ -44,6 +43,19 @@ const AdminSidebar = () => {
             <NavLink to="/admin/users" className={({ isActive }) => isActive ? activeLinkClass : linkClass}>
               <Users className="h-4 w-4" />
               User Management
+            </NavLink>
+            <NavLink to="/admin/broadcasts" className={({ isActive }) => isActive ? activeLinkClass : linkClass}>
+              <Megaphone className="h-4 w-4" />
+              Broadcasts
+            </NavLink>
+            <NavLink to="/admin/leads" className={({ isActive }) => isActive ? activeLinkClass : linkClass}>
+              <ClipboardList className="h-4 w-4" />
+              Leads
+            </NavLink>
+            {/* --- NEW LINK FOR ANALYTICS DASHBOARD --- */}
+            <NavLink to="/admin/analytics" className={({ isActive }) => isActive ? activeLinkClass : linkClass}>
+              <TrendingUp className="h-4 w-4" />
+              Analytics
             </NavLink>
           </nav>
         </div>

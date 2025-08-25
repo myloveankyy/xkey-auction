@@ -23,8 +23,6 @@ const login = async (userData) => {
 // Logout user
 const logout = () => {
   localStorage.removeItem('user');
-  // --- THIS IS THE CRITICAL FIX ---
-  // Also clear the admin PIN session to ensure full logout.
   sessionStorage.removeItem('adminPinAuthenticated');
 };
 
@@ -61,6 +59,17 @@ const deleteUser = async (userId, token) => {
   return response.data;
 };
 
+// --- NEW: Send a direct notification (Admin only) ---
+const sendDirectNotification = async (notificationData, token) => {
+    const config = {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    };
+    // notificationData should be an object: { recipientId, message }
+    const response = await axios.post(API_URL + '/send-notification', notificationData, config);
+    return response.data;
+};
 
 const authService = {
   register,
@@ -69,6 +78,7 @@ const authService = {
   createAdmin,
   getAllUsers,
   deleteUser,
+  sendDirectNotification, // --- EXPORT NEW FUNCTION ---
 };
 
 export default authService;

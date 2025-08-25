@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, LogOut, User, LogIn } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
+import NotificationBell from './NotificationBell'; // --- IMPORT NOTIFICATIONBELL ---
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,7 +43,6 @@ const Header = () => {
             <header className="bg-white/80 backdrop-blur-sm p-4 sticky top-0 z-50 border-b border-slate-200/80">
                 <div className="container mx-auto flex justify-between items-center">
                     <Link to="/" className="flex items-center gap-2">
-                        {/* --- LOGO UPDATED HERE --- */}
                         <img src="/logo.png" alt="xKeyAuction Logo" className="h-8 w-auto" />
                         <span className="text-2xl font-extrabold text-slate-900 tracking-tight">xKey</span>
                     </Link>
@@ -60,6 +60,8 @@ const Header = () => {
                     <div className="hidden lg:flex items-center gap-4">
                         {user ? (
                             <>
+                                {/* --- ADD NOTIFICATIONBELL HERE --- */}
+                                <NotificationBell />
                                 <Link to="/dashboard" className="flex items-center gap-2 text-slate-800 py-2 px-4 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors duration-300">
                                     <User size={16} />
                                     <span>Dashboard</span>
@@ -81,8 +83,10 @@ const Header = () => {
                         )}
                     </div>
 
-                    {/* Mobile Menu Toggle */}
-                    <div className="lg:hidden">
+                    {/* Mobile Menu Toggle & Auth Icons */}
+                    <div className="lg:hidden flex items-center gap-2">
+                        {/* --- ADD NOTIFICATIONBELL FOR MOBILE --- */}
+                        {user && <NotificationBell />}
                         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2">
                             <AnimatePresence initial={false} mode="wait">
                                 <motion.div key={isMenuOpen ? 'x' : 'menu'} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>

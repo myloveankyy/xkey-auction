@@ -5,9 +5,9 @@ const {
   loginUser,
   getMe,
   createAdminUser,
-  // --- NEW IMPORTS ---
   getAllUsers,
   deleteUser,
+  sendDirectNotification, // --- NEW IMPORT ---
 } = require('../controllers/userController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -26,9 +26,11 @@ router.route('/')
 router.route('/:id')
     .delete(protect, admin, deleteUser); // DELETE /api/users/:id
 
-// This route can be refactored or kept separate depending on preference.
-// For now, it's fine as is.
+// This route allows admins to create other admins.
 router.post('/create-admin', protect, admin, createAdminUser);
+
+// --- NEW ROUTE for sending direct notifications ---
+router.post('/send-notification', protect, admin, sendDirectNotification);
 
 
 module.exports = router;

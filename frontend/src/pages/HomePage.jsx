@@ -13,58 +13,68 @@ import {
   Truck, Car, Bus
 } from 'lucide-react';
 
-// --- MODIFIED: GRAVITY IMAGE NOW REACTS TO SCROLL ---
+// --- FIXED: GRAVITY IMAGE ANIMATION ---
 const GravityImage = ({ src, className, animationProps, initialDelay, scrollYProgress }) => {
     const controls = useAnimation();
+    const isMounted = useRef(false); // Ref to track if component is mounted
 
-    // --- NEW: Transform properties based on scroll progress ---
-    // As scrollYProgress goes from 0 (top) to 0.2 (20% scrolled), opacity goes from 0.7 to 0
-    const opacity = useTransform(scrollYProgress, [0, 0.2], [0.7, 0]);
-    // Similarly, scale goes from 1 to 0.6
-    const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.6]);
-
+    const opacity = useTransform(scrollYProgress, [0, 0.25], [0.8, 0]);
+    const scale = useTransform(scrollYProgress, [0, 0.25], [1, 0.6]);
 
     useEffect(() => {
-        const sequence = async () => {
-            await controls.start({
+        isMounted.current = true;
+
+        // Ensure we only run this logic when the component is mounted.
+        if (isMounted.current) {
+            // 1. Start the initial "fall into place" animation.
+            controls.start({
                 y: 0,
-                opacity: 0.7, // Initial opacity before scroll fade
+                opacity: 0.8,
+                scale: 1,
                 transition: {
                     type: "spring",
-                    stiffness: 80,
-                    damping: 8,
-                    mass: 1.5,
+                    stiffness: 60,
+                    damping: 10,
+                    mass: 1.2,
                     delay: initialDelay,
                 },
+            }).then(() => {
+                // 2. Once the first animation is complete, start the continuous "floating" animation.
+                // This check ensures the looping animation doesn't start if the component unmounts quickly.
+                if (isMounted.current) {
+                    controls.start({
+                        x: animationProps.x,
+                        y: animationProps.y,
+                        rotate: animationProps.rotate,
+                        transition: {
+                            duration: animationProps.duration,
+                            ease: "easeInOut",
+                            repeat: Infinity,
+                            repeatType: 'mirror',
+                        },
+                    });
+                }
             });
-
-            controls.start({
-                x: animationProps.x,
-                y: animationProps.y,
-                rotate: animationProps.rotate,
-                transition: {
-                    duration: animationProps.duration,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                    repeatType: 'reverse',
-                },
-            });
+        }
+        
+        // Cleanup function to update the mounted status on unmount.
+        return () => {
+            isMounted.current = false;
         };
-        sequence();
-    }, [controls, animationProps, initialDelay]);
+    }, [controls, animationProps, initialDelay]); // Dependencies remain the same.
 
     return (
         <motion.div
             className={`absolute z-0 ${className} hidden md:block`}
-            initial={{ y: "-100vh", opacity: 0 }}
+            initial={{ y: "-100vh", opacity: 0, scale: 0.8 }}
             animate={controls}
-            // --- NEW: Apply scroll-transformed style properties ---
             style={{ opacity, scale }}
             whileHover={{
                 scale: 1.15,
-                y: -20,
-                opacity: 1, // Bring to full opacity on hover
-                transition: { type: 'spring', stiffness: 400, damping: 10 }
+                y: -15,
+                rotate: 0,
+                opacity: 1,
+                transition: { type: 'spring', stiffness: 300, damping: 10 }
             }}
         >
             <img 
@@ -77,19 +87,17 @@ const GravityImage = ({ src, className, animationProps, initialDelay, scrollYPro
 };
 
 
-// --- HERO SECTION ---
+// --- HERO SECTION (Unchanged) ---
 const HeroSection = () => {
     const dispatch = useDispatch();
     const { heroImages } = useSelector((state) => state.heroImages);
     
-    // --- Hook to track scroll progress for animations ---
     const targetRef = useRef(null);
     const { scrollYProgress } = useScroll({
         target: targetRef,
         offset: ["start start", "end start"]
     });
 
-    // --- Parallax effect for text ---
     const textY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
     useEffect(() => {
@@ -101,15 +109,14 @@ const HeroSection = () => {
     const categories = [ { name: 'HCV', fullName: 'Heavy Motor Vehicle', icon: Truck, link: '/vehicles?category=HCV' }, { name: 'LMV', fullName: 'Light Motor Vehicle', icon: Car, link: '/vehicles?category=LMV' }, { name: 'MMV', fullName: 'Medium Motor Vehicle', icon: Bus, link: '/vehicles?category=MMV' }, ];
     
     const physicsPaths = [
-        { x: ["-10%", "30%", "5%"], y: ["0%", "40%", "15%"], rotate: [0, -12, 8], duration: 35 },
-        { x: ["5%", "-20%", "10%"], y: ["0%", "-35%", "25%"], rotate: [0, 18, -10], duration: 28 },
-        { x: ["-5%", "15%", "-10%"], y: ["0%", "25%", "-15%"], rotate: [0, 8, -12], duration: 22 },
+        { x: ["-5%", "8%"], y: ["-2%", "10%"], rotate: [0, -12, 5], duration: 35 },
+        { x: ["5%", "-10%"], y: ["-5%", "5%"], rotate: [0, 15, -8], duration: 28 },
+        { x: ["-8%", "5%"], y: ["8%", "-8%"], rotate: [0, 10, -10], duration: 22 },
     ];
     
-    const positionClasses = [ "w-52 h-52 top-[15%] left-[5%]", "w-48 h-48 top-[40%] right-[8%]", "w-32 h-32 top-[55%] left-[20%] hidden xl:block", ];
+    const positionClasses = [ "w-56 h-56 top-[12%] left-[5%]", "w-48 h-48 top-[45%] right-[8%]", "w-36 h-36 top-[60%] left-[18%] hidden xl:block", ];
 
     return (
-        // --- MODIFIED: Gradient end-color now has 40% opacity ---
         <section ref={targetRef} className="relative bg-gradient-to-b from-white to-[#f8fafc66] text-slate-900 flex flex-col justify-center items-center text-center pt-32 pb-24 px-4 sm:px-6 lg:px-8 min-h-[90vh] overflow-hidden">
             {heroImages.slice(0, 3).map((image, index) => (
                 <GravityImage 
@@ -117,8 +124,7 @@ const HeroSection = () => {
                     src={image.url} 
                     className={positionClasses[index]}
                     animationProps={physicsPaths[index]}
-                    initialDelay={0.5 + index * 0.3}
-                    // --- Pass scroll progress to the component ---
+                    initialDelay={0.5 + index * 0.2}
                     scrollYProgress={scrollYProgress}
                 />
             ))}
@@ -129,7 +135,6 @@ const HeroSection = () => {
                     initial={{ opacity: 0, y: -30 }} 
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    // --- Apply parallax style ---
                     style={{ y: textY }}
                 >
                     Find Your Next Commercial Vehicle
@@ -139,7 +144,6 @@ const HeroSection = () => {
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     transition={{ duration: 0.5, delay: 0.4 }}
-                     // --- Apply parallax style ---
                     style={{ y: textY }}
                 >
                     The most trusted platform for high-quality, pre-owned commercial vehicles at unbeatable prices.
@@ -185,7 +189,7 @@ const HeroSection = () => {
     );
 };
 
-// --- "WHY CHOOSE US" SECTION (Unchanged from Design #2) ---
+// --- "WHY CHOOSE US" SECTION (Unchanged) ---
 const WhyChooseUsSection = () => {
     const features = [
         { icon: ShieldCheck, title: "Unmatched Quality", description: "Every vehicle undergoes a comprehensive multi-point inspection to ensure it meets the xKey Gold Standard." },
@@ -233,7 +237,7 @@ const WhyChooseUsSection = () => {
 };
 
 
-// --- Main Page Component ---
+// --- Main Page Component (Unchanged) ---
 const HomePage = () => {
     const dispatch = useDispatch();
     const { vehicles, isLoading, isError, message } = useSelector((state) => state.vehicles);

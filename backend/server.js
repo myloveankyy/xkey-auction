@@ -44,22 +44,22 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/hero-images', require('./routes/heroImageRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/broadcasts', require('./routes/broadcastRoutes'));
+app.use('/api/leads', require('./routes/leadRoutes'));
+// --- NEW: Added Analytics Routes ---
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 
 
 // --- DEPLOYMENT CODE START ---
-// This code runs only in the production environment
 if (process.env.NODE_ENV === 'production') {
-  // Set the static folder for our built React frontend
   app.use(express.static(path.join(__dirname, '../frontend/build')));
-
-  // For any route that is not our API, just send the index.html file from the build folder
   app.get('*', (req, res) =>
     res.sendFile(
       path.resolve(__dirname, '../', 'frontend', 'build', 'index.html')
     )
   );
 } else {
-  // If not in production, just have a simple welcome message for the API root
   app.get('/', (req, res) => {
     res.send('xKeyAuction API is running...');
   });

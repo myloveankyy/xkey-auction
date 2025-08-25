@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
-const Vehicle = require('../models/vehicleModel'); // Import Vehicle model for cascading deletes
+const Vehicle = require('../models/vehicleModel');
+const Notification = require('../models/notificationModel'); // --- IMPORT NOTIFICATION MODEL ---
 const generateToken = require('../utils/generateToken');
 
 // @desc    Register a new user (for sellers)
@@ -22,6 +23,19 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
+    // --- NOTIFICATION LOGIC START ---
+    // When a new user signs up, notify all admins.
+    const admins = await User.find({ role: 'admin' });
+    const notificationPromises = admins.map(admin => 
+      Notification.create({
+        user: admin._id,
+        message: `New seller '${user.name}' has just signed up.`,
+        link: `/admin/users`, // Link to the user management page
+      })
+    );
+    await Promise.all(notificationPromises);
+    // --- NOTIFICATION LOGIC END ---
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -105,7 +119,6 @@ const createAdminUser = asyncHandler(async (req, res) => {
     }
 });
 
-// --- NEW: Get all users ---
 // @desc    Get all users for the admin panel
 // @route   GET /api/users/
 // @access  Private/Admin
@@ -114,7 +127,6 @@ const getAllUsers = asyncHandler(async (req, res) => {
     res.status(200).json(users);
 });
 
-// --- NEW: Delete a user ---
 // @desc    Delete a user by ID
 // @route   DELETE /api/users/:id
 // @access  Private/Admin
@@ -126,19 +138,42 @@ const deleteUser = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    // CRITICAL: Prevent an admin from deleting their own account
     if (userToDelete._id.toString() === req.user._id.toString()) {
         res.status(400);
         throw new Error('You cannot delete your own admin account.');
     }
 
-    // Optional but recommended: Also delete all vehicles listed by this user
     await Vehicle.deleteMany({ seller: userToDelete._id });
-    
-    // Now, delete the user
     await userToDelete.deleteOne();
 
     res.status(200).json({ id: req.params.id, message: 'User and all their listings have been deleted.' });
+});
+
+// --- NEW: Send a direct notification to a user ---
+// @desc    Send a notification to a specific user
+// @route   POST /api/users/send-notification
+// @access  Private/Admin
+const sendDirectNotification = asyncHandler(async (req, res) => {
+    const { recipientId, message } = req.body;
+
+    if (!recipientId || !message) {
+        res.status(400);
+        throw new Error('Recipient ID and message are required.');
+    }
+
+    const recipient = await User.findById(recipientId);
+    if (!recipient) {
+        res.status(404);
+        throw new Error('Recipient user not found.');
+    }
+
+    await Notification.create({
+        user: recipientId,
+        message: message,
+        link: '/notifications', // Generic link to their notifications page
+    });
+
+    res.status(201).json({ success: true, message: 'Notification sent successfully.' });
 });
 
 
@@ -147,7 +182,7 @@ module.exports = {
   loginUser,
   getMe,
   createAdminUser,
-  // --- NEW EXPORTS ---
   getAllUsers,
   deleteUser,
+  sendDirectNotification, // --- EXPORT THE NEW FUNCTION ---
 };
